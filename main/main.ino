@@ -1,10 +1,3 @@
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <math.h>
-
 #define F_CPU 16000000UL
 #define BAUD 9600
 #define BRC ((F_CPU / 16 / BAUD) - 1)
@@ -68,19 +61,7 @@ void uart_read_line(char *buffer, uint8_t max_len)
 ISR(INT0_vect)
 {
   leds_on = !leds_on;
-
-  if (leds_on)
-  {
-    PWM_RED = (curr_red * bright) / 100;
-    PWM_GREEN = (curr_green * bright) / 100;
-    PWM_BLUE = (curr_blue * bright) / 100;
-  }
-  else
-  {
-    PWM_RED = 0;
-    PWM_GREEN = 0;
-    PWM_BLUE = 0;
-  }
+  set_colors_rgb(curr_red, curr_green, curr_blue);
 }
 
 void set_colors_rgb(int r, int g, int b)
@@ -98,6 +79,12 @@ void set_colors_rgb(int r, int g, int b)
     PWM_RED = (r * bright) / 100;
     PWM_GREEN = (g * bright) / 100;
     PWM_BLUE = (b * bright) / 100;
+  }
+  else
+  {
+    PWM_RED = 0;
+    PWM_GREEN = 0;
+    PWM_BLUE = 0;
   }
 }
 
@@ -144,7 +131,8 @@ void set_colors_hsl(int h, int s, int l)
   set_colors_rgb((r + m) * 255, (g + m) * 255, (b + m) * 255);
 }
 
-void set_colors_hsv(int h, int s, int v) {
+void set_colors_hsv(int h, int s, int v)
+{
   if (h < 0 || h > 360 || s < 0 || s > 100 || v < 0 || v > 100) return;
 
   float H = (float)h;
@@ -157,17 +145,28 @@ void set_colors_hsv(int h, int s, int v) {
 
   float r, g, b;
 
-  if (H < 60) {
+  if (H < 60) 
+  {
     r = C; g = X; b = 0;
-  } else if (H < 120) {
+  } 
+  else if (H < 120) 
+  {
     r = X; g = C; b = 0;
-  } else if (H < 180) {
+  } 
+  else if (H < 180) 
+  {
     r = 0; g = C; b = X;
-  } else if (H < 240) {
+  } 
+  else if (H < 240) 
+  {
     r = 0; g = X; b = C;
-  } else if (H < 300) {
+  } 
+  else if (H < 300) 
+  {
     r = X; g = 0; b = C;
-  } else {
+  } 
+  else 
+  {
     r = C; g = 0; b = X;
   }
 
@@ -178,16 +177,13 @@ void set_colors_hsv(int h, int s, int v) {
 
 ISR(TIMER1_COMPA_vect)
 {
-  adc_read(); // chama a função que atualiza o brilho
+  adc_read();
 }
 
 void adc_read()
 {
   uint16_t adc_temp = 0;
   unsigned long int adc_store = 0;
-
-  // Corrigido: mantém REFS0 e altera apenas canal para PC0 (ADC0)
-  ADMUX = (ADMUX & 0xF0) | 0;
 
   for (int i = 0; i < AMOSTRAS; i++)
   {
@@ -203,14 +199,7 @@ void adc_read()
 
   uint16_t media_adc = adc_store / AMOSTRAS;
   bright = (media_adc * 100UL) / 1023;
-
-  // Aplica o brilho à cor atual
-  if (leds_on)
-  {
-    PWM_RED = (curr_red * bright) / 100;
-    PWM_GREEN = (curr_green * bright) / 100;
-    PWM_BLUE = (curr_blue * bright) / 100;
-  }
+  set_colors_rgb(curr_red, curr_green, curr_blue);
 }
 
 // ---------------- Main ----------------
